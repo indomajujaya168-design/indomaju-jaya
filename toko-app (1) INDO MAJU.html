@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toko App</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f3ef; --bg2:#ffffff; --bg3:#ede9e3;
+  --ink:#1a1a18; --ink2:#4a4a44; --ink3:#8a8a80;
+  --accent:#d4420a; --accent2:#f5a623; --green:#1a7f4b;
+  --border:#ddd9d0;
+  --shadow:0 2px 16px rgba(0,0,0,0.08);
+  --shadow-lg:0 8px 40px rgba(0,0,0,0.14);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;min-height:100vh;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+#admin-fab{
+  position:fixed;bottom:24px;right:24px;z-index:1000;
+  background:var(--ink);color:#fff;border:none;border-radius:50px;
+  padding:12px 20px;font-family:'DM Sans',sans-serif;font-weight:700;
+  font-size:0.82rem;letter-spacing:0.5px;cursor:pointer;
+  box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:8px;transition:all 0.2s;
+}
+#admin-fab:hover{background:var(--accent);transform:translateY(-2px);}
+#admin-fab .dot{width:8px;height:8px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+#admin-panel{position:fixed;inset:0;z-index:999;display:none;align-items:flex-start;justify-content:flex-end;}
+#admin-panel.open{display:flex;}
+.admin-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);}
+.admin-drawer{
+  position:relative;z-index:1;width:500px;max-width:100vw;height:100vh;
+  background:var(--bg2);border-left:1px solid var(--border);overflow-y:auto;
+  display:flex;flex-direction:column;box-shadow:var(--shadow-lg);animation:slideIn 0.3s ease;
+}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.admin-header{
+  position:sticky;top:0;z-index:2;background:var(--ink);color:#fff;
+  padding:18px 24px;display:flex;align-items:center;justify-content:space-between;
+}
+.admin-header h2{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;}
+.admin-close{
+  background:rgba(255,255,255,0.15);border:none;color:#fff;width:32px;height:32px;
+  border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;
+  justify-content:center;transition:background 0.2s;
+}
+.admin-close:hover{background:rgba(255,255,255,0.3);}
+.admin-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:56px;z-index:1;}
+.admin-tab{
+  flex:1;padding:12px 8px;border:none;background:transparent;font-family:'DM Sans',sans-serif;
+  font-weight:600;font-size:0.8rem;letter-spacing:0.5px;color:var(--ink3);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all 0.2s;
+}
+.admin-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--bg2);}
+.admin-body{padding:24px;flex:1;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-weight:600;font-size:0.78rem;letter-spacing:0.5px;text-transform:uppercase;color:var(--ink2);margin-bottom:6px;}
+.form-group input,.form-group textarea,.form-group select{
+  width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;
+  font-family:'DM Sans',sans-serif;font-size:0.9rem;color:var(--ink);
+  background:var(--bg);outline:none;transition:border-color 0.2s;
+}
+.form-group input:focus,.form-group textarea:focus{border-color:var(--accent);background:#fff;}
+.form-group textarea{resize:vertical;min-height:72px;}
+
+.foto-preview{
+  width:100%;height:150px;border-radius:10px;background:var(--bg3);
+  border:1.5px dashed var(--border);display:flex;align-items:center;
+  justify-content:center;margin-top:8px;overflow:hidden;
+}
+.foto-preview img{width:100%;height:100%;object-fit:cover;border-radius:9px;}
+.foto-placeholder{text-align:center;color:var(--ink3);}
+.foto-placeholder span{font-size:2.5rem;display:block;margin-bottom:6px;}
+.foto-placeholder p{font-size:0.75rem;}
+.foto-hint{
+  background:#fef9ec;border:1px solid #fde68a;border-radius:8px;
+  padding:10px 14px;font-size:0.78rem;color:#92400e;margin-top:8px;line-height:1.6;
+}
+.foto-hint strong{display:block;margin-bottom:2px;}
+
+.btn-save{
+  width:100%;padding:12px;background:var(--accent);color:#fff;border:none;
+  border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:700;
+  font-size:0.9rem;cursor:pointer;transition:all 0.2s;margin-top:4px;
+}
+.btn-save:hover{background:#b8360a;transform:translateY(-1px);}
+.btn-danger{
+  background:transparent;border:1.5px solid #dc2626;color:#dc2626;padding:6px 14px;
+  border-radius:6px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:0.78rem;
+  cursor:pointer;transition:all 0.2s;
+}
+.btn-danger:hover{background:#dc2626;color:#fff;}
+.btn-add{
+  width:100%;padding:10px;background:var(--bg3);color:var(--ink);
+  border:1.5px dashed var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;
+  font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s;margin-bottom:16px;
+}
+.btn-add:hover{border-color:var(--accent);color:var(--accent);background:#fff;}
+.btn-edit{
+  background:transparent;border:1.5px solid var(--border);color:var(--ink2);padding:5px 12px;
+  border-radius:6px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:0.75rem;
+  cursor:pointer;transition:all 0.2s;
+}
+.btn-edit:hover{border-color:var(--ink);color:var(--ink);}
+.section-label{font-size:0.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:14px;}
+
+.admin-product-item{
+  background:var(--bg);border:1px solid var(--border);border-radius:10px;
+  padding:12px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;
+}
+.admin-product-thumb{
+  width:52px;height:52px;border-radius:8px;background:var(--bg3);
+  overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.8rem;
+}
+.admin-product-thumb img{width:100%;height:100%;object-fit:cover;}
+.admin-product-info{flex:1;min-width:0;}
+.admin-product-name{font-weight:700;font-size:0.88rem;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.admin-product-price{font-size:0.8rem;color:var(--accent);font-weight:600;}
+.admin-product-actions{display:flex;gap:6px;margin-top:8px;}
+
+#modal{position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;padding:16px;}
+#modal.open{display:flex;}
+.modal-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);}
+.modal-box{
+  position:relative;z-index:1;background:#fff;border-radius:16px;
+  width:100%;max-width:480px;max-height:92vh;overflow-y:auto;
+  padding:28px;box-shadow:var(--shadow-lg);animation:popIn 0.25s ease;
+}
+@keyframes popIn{from{transform:scale(0.92);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:1px;margin-bottom:20px;}
+
+.topbar{
+  background:var(--ink);color:#fff;padding:0 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:56px;position:sticky;top:0;z-index:100;
+}
+.store-logo{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px;color:#fff;}
+.store-logo span{color:var(--accent2);}
+.cart-pill{
+  background:var(--accent);color:#fff;border:none;border-radius:50px;
+  padding:7px 18px;font-family:'DM Sans',sans-serif;font-weight:700;
+  font-size:0.82rem;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;
+}
+.cart-pill:hover{background:#b8360a;}
+.cart-count{
+  background:#fff;color:var(--accent);border-radius:50%;width:18px;height:18px;
+  font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;
+}
+
+.store-hero{
+  background:linear-gradient(135deg,var(--ink) 0%,#2a2a24 100%);
+  color:#fff;padding:48px 32px;position:relative;overflow:hidden;
+}
+.store-hero::before{
+  content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+.store-hero-inner{position:relative;max-width:700px;}
+.store-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);
+  border-radius:50px;padding:5px 14px;font-size:0.75rem;font-weight:600;
+  color:var(--accent2);margin-bottom:16px;
+}
+.store-name-display{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,5vw,3.8rem);line-height:1;letter-spacing:1px;margin-bottom:14px;}
+.store-name-display span{color:var(--accent2);}
+.store-desc-display{font-size:0.95rem;color:rgba(255,255,255,0.65);line-height:1.7;max-width:560px;margin-bottom:24px;}
+.store-meta{display:flex;gap:20px;flex-wrap:wrap;}
+.store-meta-item{display:flex;align-items:center;gap:6px;font-size:0.8rem;color:rgba(255,255,255,0.55);}
+
+.search-bar{background:var(--bg2);padding:16px 32px;border-bottom:1px solid var(--border);display:flex;gap:10px;}
+.search-input{flex:1;padding:10px 16px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.9rem;outline:none;color:var(--ink);transition:border-color 0.2s;}
+.search-input:focus{border-color:var(--accent);}
+.search-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;}
+
+.products-section{padding:32px;}
+.products-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.products-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;}
+.product-count{font-size:0.8rem;color:var(--ink3);background:var(--bg3);padding:4px 12px;border-radius:50px;}
+.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;}
+
+.product-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:all 0.25s;position:relative;}
+.product-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:var(--accent);}
+
+.product-img-area{
+  height:180px;background:var(--bg3);display:flex;align-items:center;
+  justify-content:center;font-size:5rem;position:relative;overflow:hidden;
+}
+.product-img-area img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+.product-img-area .efallback{position:relative;z-index:1;}
+.product-status-badge{
+  position:absolute;top:10px;left:10px;z-index:2;padding:3px 10px;border-radius:50px;
+  font-size:0.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+}
+.badge-available{background:#dcfce7;color:#166534;}
+.badge-sold{background:#fee2e2;color:#991b1b;}
+.product-body{padding:14px;}
+.product-category{font-size:0.7rem;color:var(--ink3);margin-bottom:6px;}
+.product-name{font-weight:700;font-size:0.95rem;color:var(--ink);margin-bottom:4px;line-height:1.3;}
+.product-desc-short{font-size:0.78rem;color:var(--ink3);margin-bottom:12px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.product-footer{display:flex;align-items:center;justify-content:space-between;}
+.product-price{font-family:'DM Mono',monospace;font-size:1rem;font-weight:500;color:var(--accent);}
+.add-to-cart{background:var(--ink);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:0.78rem;cursor:pointer;transition:all 0.2s;}
+.add-to-cart:hover{background:var(--accent);}
+.add-to-cart:disabled{background:var(--border);color:var(--ink3);cursor:not-allowed;}
+
+.empty-state{text-align:center;padding:80px 20px;color:var(--ink3);grid-column:1/-1;}
+.empty-icon{font-size:4rem;margin-bottom:16px;}
+.empty-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--ink);margin-bottom:8px;}
+
+#detail-modal{position:fixed;inset:0;z-index:1900;display:none;align-items:center;justify-content:center;padding:16px;}
+#detail-modal.open{display:flex;}
+.detail-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);}
+.detail-box{position:relative;z-index:1;background:#fff;border-radius:16px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:popIn 0.25s ease;}
+.detail-img{width:100%;height:220px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:6rem;border-radius:16px 16px 0 0;overflow:hidden;position:relative;}
+.detail-img img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+.detail-img .efallback{position:relative;}
+.detail-body{padding:24px;}
+.detail-name{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:0.5px;margin-bottom:6px;}
+.detail-price{font-family:'DM Mono',monospace;font-size:1.5rem;color:var(--accent);margin-bottom:14px;}
+.detail-desc{font-size:0.9rem;color:var(--ink2);line-height:1.7;margin-bottom:16px;}
+.detail-meta{font-size:0.78rem;color:var(--ink3);margin-bottom:20px;}
+.detail-close{position:absolute;top:12px;right:12px;z-index:10;background:rgba(0,0,0,0.45);border:none;color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;}
+
+#cart-panel{position:fixed;inset:0;z-index:900;display:none;align-items:flex-start;justify-content:flex-end;}
+#cart-panel.open{display:flex;}
+.cart-drawer{position:relative;z-index:1;width:380px;max-width:100vw;height:100vh;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;box-shadow:var(--shadow-lg);animation:slideIn 0.25s ease;}
+.cart-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.cart-header h3{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:1px;}
+.cart-body{flex:1;overflow-y:auto;padding:16px 24px;}
+.cart-item{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
+.cart-thumb{width:52px;height:52px;border-radius:8px;background:var(--bg3);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.8rem;}
+.cart-thumb img{width:100%;height:100%;object-fit:cover;}
+.cart-item-info{flex:1;}
+.cart-item-name{font-weight:700;font-size:0.88rem;}
+.cart-item-price{font-size:0.8rem;color:var(--accent);}
+.cart-item-qty{display:flex;align-items:center;gap:8px;}
+.qty-btn{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border);background:transparent;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;transition:all 0.2s;}
+.qty-btn:hover{background:var(--ink);color:#fff;border-color:var(--ink);}
+.qty-num{font-weight:700;font-size:0.9rem;min-width:20px;text-align:center;}
+.cart-footer{padding:20px 24px;border-top:1px solid var(--border);}
+.cart-total{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.cart-total strong{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.5px;}
+.cart-total span{font-family:'DM Mono',monospace;font-size:1.1rem;color:var(--accent);}
+.checkout-btn{width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;transition:all 0.2s;}
+.checkout-btn:hover{background:#155f3a;}
+.empty-cart{text-align:center;padding:60px 0;color:var(--ink3);}
+
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 22px;border-radius:50px;font-size:0.85rem;font-weight:600;z-index:3000;opacity:0;transition:all 0.3s;white-space:nowrap;pointer-events:none;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media(max-width:600px){
+  .topbar{padding:0 16px;}
+  .store-hero{padding:32px 16px;}
+  .products-section{padding:20px 16px;}
+  .admin-drawer,.cart-drawer{width:100vw;}
+  .search-bar{padding:12px 16px;}
+}
+</style>
+</head>
+<body>
+
+<div id="storefront">
+  <div class="topbar">
+    <div class="store-logo" id="logo-display">MY<span>TOKO</span></div>
+    <button class="cart-pill" onclick="openCart()">
+      🛒 Keranjang <div class="cart-count" id="cart-count">0</div>
+    </button>
+  </div>
+  <div class="store-hero">
+    <div class="store-hero-inner">
+      <div class="store-badge">⭐ Toko Online</div>
+      <div class="store-name-display" id="hero-name-display">NAMA <span>TOKO</span></div>
+      <div class="store-desc-display" id="hero-desc-display">Klik tombol ⚙️ Admin Panel di bawah untuk mulai mengatur toko Anda.</div>
+      <div class="store-meta">
+        <div class="store-meta-item">📦 <span id="meta-product-count">0 Produk</span></div>
+        <div class="store-meta-item">📍 <span id="meta-location">Lokasi Toko</span></div>
+        <div class="store-meta-item">📱 <span id="meta-wa">WhatsApp</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="search-bar">
+    <input class="search-input" type="text" id="search-input" placeholder="Cari produk..." oninput="filterProducts()">
+    <button class="search-btn">🔍</button>
+  </div>
+  <div class="products-section">
+    <div class="products-header">
+      <div class="products-title">SEMUA PRODUK</div>
+      <div class="product-count" id="product-count-label">0 produk</div>
+    </div>
+    <div class="products-grid" id="products-grid"></div>
+  </div>
+</div>
+
+<button id="admin-fab" onclick="openAdmin()">
+  <div class="dot"></div>⚙️ Admin Panel
+</button>
+
+<!-- ADMIN PANEL -->
+<div id="admin-panel">
+  <div class="admin-overlay" onclick="closeAdmin()"></div>
+  <div class="admin-drawer">
+    <div class="admin-header">
+      <h2>⚙️ ADMIN PANEL</h2>
+      <button class="admin-close" onclick="closeAdmin()">✕</button>
+    </div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchTab(event,'tab-toko')">🏪 Toko</button>
+      <button class="admin-tab" onclick="switchTab(event,'tab-produk')">📦 Produk</button>
+      <button class="admin-tab" onclick="switchTab(event,'tab-kontak')">📞 Kontak</button>
+    </div>
+    <div class="admin-body">
+      <div class="tab-content active" id="tab-toko">
+        <p class="section-label">Informasi Toko</p>
+        <div class="form-group"><label>Nama Toko (Bagian 1)</label><input type="text" id="admin-store-name" placeholder="Contoh: BENGKEL"></div>
+        <div class="form-group"><label>Nama Toko (Bagian 2 — warna)</label><input type="text" id="admin-store-name2" placeholder="Contoh: JAYA"></div>
+        <div class="form-group"><label>Deskripsi Toko</label><textarea id="admin-store-desc" placeholder="Ceritakan tentang toko Anda..."></textarea></div>
+        <div class="form-group"><label>Lokasi / Kota</label><input type="text" id="admin-location" placeholder="Contoh: Tangerang, Banten"></div>
+        <button class="btn-save" onclick="saveToko()">💾 Simpan Info Toko</button>
+      </div>
+      <div class="tab-content" id="tab-produk">
+        <button class="btn-add" onclick="openAddProduct()">➕ Tambah Produk Baru</button>
+        <p class="section-label">Daftar Produk (<span id="admin-product-count">0</span>)</p>
+        <div id="admin-product-list"></div>
+      </div>
+      <div class="tab-content" id="tab-kontak">
+        <p class="section-label">Kontak & Pembayaran</p>
+        <div class="form-group"><label>Nomor WhatsApp</label><input type="text" id="admin-wa" placeholder="Contoh: 0812-3456-7890"></div>
+        <div class="form-group"><label>Metode Pembayaran</label><input type="text" id="admin-payment" placeholder="Contoh: Transfer BCA, QRIS, COD"></div>
+        <div class="form-group"><label>Pesan Otomatis saat Order</label><textarea id="admin-checkout-msg" placeholder="Contoh: Terima kasih! Kami segera menghubungi Anda."></textarea></div>
+        <button class="btn-save" onclick="saveKontak()">💾 Simpan Kontak</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PRODUK -->
+<div id="modal">
+  <div class="modal-overlay" onclick="closeModal()"></div>
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">TAMBAH PRODUK</div>
+
+    <div class="form-group">
+      <label>📸 Foto Produk (URL Link)</label>
+      <input type="text" id="modal-foto" placeholder="https://i.ibb.co/xxx/foto.jpg" oninput="previewFoto()">
+      <div class="foto-preview" id="foto-preview">
+        <div class="foto-placeholder"><span>📷</span><p>Masukkan link foto di atas</p></div>
+      </div>
+      <div class="foto-hint">
+        <strong>💡 Cara dapat link foto GRATIS:</strong>
+        1. Buka <strong>imgbb.com</strong> di browser<br>
+        2. Klik "Start Uploading" → pilih foto dari HP/laptop<br>
+        3. Setelah upload, copy <strong>"Direct link"</strong><br>
+        4. Paste link tersebut di kolom atas ✅
+      </div>
+    </div>
+
+    <div class="form-group"><label>Emoji (cadangan jika foto gagal)</label><input type="text" id="modal-emoji" placeholder="Contoh: ⚙️ 🔧 📱 👕" maxlength="4"></div>
+    <div class="form-group"><label>Nama Produk *</label><input type="text" id="modal-name" placeholder="Nama produk..."></div>
+    <div class="form-group"><label>Deskripsi Produk</label><textarea id="modal-desc" placeholder="Jelaskan detail, ukuran, merk, kondisi..."></textarea></div>
+    <div class="form-group"><label>Harga *</label><input type="text" id="modal-price" placeholder="Contoh: Rp 150.000"></div>
+    <div class="form-group"><label>Kategori</label><input type="text" id="modal-category" placeholder="Contoh: Bearing, V-Belt, dll"></div>
+    <div class="form-group">
+      <label>Status Stok</label>
+      <select id="modal-status"><option value="available">✅ Tersedia</option><option value="sold">❌ Habis</option></select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn-save" onclick="saveProduct()" style="flex:1">💾 Simpan Produk</button>
+      <button class="btn-danger" onclick="closeModal()" style="padding:12px 18px;">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div id="detail-modal">
+  <div class="detail-overlay" onclick="closeDetail()"></div>
+  <div class="detail-box">
+    <button class="detail-close" onclick="closeDetail()">✕</button>
+    <div class="detail-img" id="detail-img"><span class="efallback">📦</span></div>
+    <div class="detail-body">
+      <div class="detail-name" id="detail-name"></div>
+      <div class="detail-price" id="detail-price"></div>
+      <div class="detail-desc" id="detail-desc"></div>
+      <div class="detail-meta" id="detail-meta"></div>
+      <button class="btn-save" id="detail-cart-btn">🛒 Tambah ke Keranjang</button>
+    </div>
+  </div>
+</div>
+
+<!-- CART -->
+<div id="cart-panel">
+  <div class="admin-overlay" onclick="closeCart()"></div>
+  <div class="cart-drawer">
+    <div class="cart-header">
+      <h3>🛒 KERANJANG</h3>
+      <button class="admin-close" onclick="closeCart()">✕</button>
+    </div>
+    <div class="cart-body" id="cart-body">
+      <div class="empty-cart"><div style="font-size:3rem;margin-bottom:12px">🛒</div><p>Keranjang masih kosong</p></div>
+    </div>
+    <div class="cart-footer">
+      <div class="cart-total"><strong>TOTAL</strong><span id="cart-total">Rp 0</span></div>
+      <button class="checkout-btn" onclick="checkout()">✅ Pesan via WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let store = JSON.parse(localStorage.getItem('tokoStore3')||'null')||{
+  name:'NAMA',name2:'TOKO',
+  desc:'Klik tombol ⚙️ Admin Panel di bawah untuk mulai mengatur toko Anda.',
+  location:'Lokasi Toko',wa:'0812-3456-7890',
+  payment:'Transfer Bank, QRIS',
+  checkoutMsg:'Terima kasih sudah order! Kami akan segera menghubungi Anda via WhatsApp.',
+  products:[]
+};
+let cart=[], editingId=null;
+
+function saveData(){localStorage.setItem('tokoStore3',JSON.stringify(store));}
+
+function imgArea(p, size){
+  const em = p.emoji||'📦';
+  const fs = size==='big'?'6rem':'5rem';
+  if(p.foto){
+    return `<img src="${p.foto}" alt="${p.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+            <span class="efallback" style="display:none;font-size:${fs}">${em}</span>`;
+  }
+  return `<span class="efallback" style="font-size:${fs}">${em}</span>`;
+}
+
+function renderStorefront(){
+  document.getElementById('logo-display').innerHTML=store.name+'<span>'+store.name2+'</span>';
+  document.getElementById('hero-name-display').innerHTML=store.name+' <span>'+store.name2+'</span>';
+  document.getElementById('hero-desc-display').textContent=store.desc;
+  document.getElementById('meta-location').textContent=store.location;
+  document.getElementById('meta-wa').textContent=store.wa;
+  document.getElementById('meta-product-count').textContent=store.products.length+' Produk';
+  document.getElementById('product-count-label').textContent=store.products.length+' produk';
+  document.title=store.name+' '+store.name2;
+  renderProducts(store.products);
+  renderAdminList();
+  document.getElementById('admin-product-count').textContent=store.products.length;
+}
+
+function renderProducts(prods){
+  const grid=document.getElementById('products-grid');
+  if(!prods.length){
+    grid.innerHTML=`<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-title">Belum Ada Produk</div><p>Buka Admin Panel → Tab Produk untuk menambah produk pertama!</p></div>`;
+    return;
+  }
+  grid.innerHTML=prods.map(p=>`
+    <div class="product-card" onclick="openDetail(${p.id})">
+      <div class="product-img-area">
+        ${imgArea(p,'small')}
+        <span class="product-status-badge ${p.status==='sold'?'badge-sold':'badge-available'}">${p.status==='sold'?'Habis':'Tersedia'}</span>
+      </div>
+      <div class="product-body">
+        <div class="product-category">${p.category||'Produk'}</div>
+        <div class="product-name">${p.name}</div>
+        <div class="product-desc-short">${p.desc||'Klik untuk lihat detail.'}</div>
+        <div class="product-footer">
+          <div class="product-price">${p.price}</div>
+          <button class="add-to-cart" ${p.status==='sold'?'disabled':''} onclick="event.stopPropagation();addToCart(${p.id})">${p.status==='sold'?'Habis':'+ Keranjang'}</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderAdminList(){
+  const list=document.getElementById('admin-product-list');
+  if(!store.products.length){list.innerHTML='<p style="color:var(--ink3);font-size:0.85rem;text-align:center;padding:20px 0;">Belum ada produk.</p>';return;}
+  list.innerHTML=store.products.map(p=>`
+    <div class="admin-product-item">
+      <div class="admin-product-thumb">${p.foto?`<img src="${p.foto}" alt="${p.name}" onerror="this.style.display='none'">`:(p.emoji||'📦')}</div>
+      <div class="admin-product-info">
+        <div class="admin-product-name">${p.name}</div>
+        <div class="admin-product-price">${p.price} · ${p.status==='sold'?'❌ Habis':'✅ Tersedia'}</div>
+        <div class="admin-product-actions">
+          <button class="btn-edit" onclick="openEditProduct(${p.id})">✏️ Edit</button>
+          <button class="btn-danger" onclick="deleteProduct(${p.id})">🗑 Hapus</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterProducts(){
+  const q=document.getElementById('search-input').value.toLowerCase();
+  renderProducts(store.products.filter(p=>p.name.toLowerCase().includes(q)||(p.desc||'').toLowerCase().includes(q)||(p.category||'').toLowerCase().includes(q)));
+}
+
+function previewFoto(){
+  const url=document.getElementById('modal-foto').value.trim();
+  const box=document.getElementById('foto-preview');
+  if(!url){box.innerHTML='<div class="foto-placeholder"><span>📷</span><p>Masukkan link foto di atas</p></div>';return;}
+  box.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:9px;" onerror="this.parentElement.innerHTML='<div class=\\'foto-placeholder\\'><span>⚠️</span><p>Link foto tidak valid. Coba link lain.</p></div>'">`;
+}
+
+function openAdmin(){
+  document.getElementById('admin-panel').classList.add('open');
+  document.getElementById('admin-store-name').value=store.name;
+  document.getElementById('admin-store-name2').value=store.name2;
+  document.getElementById('admin-store-desc').value=store.desc;
+  document.getElementById('admin-location').value=store.location;
+  document.getElementById('admin-wa').value=store.wa;
+  document.getElementById('admin-payment').value=store.payment;
+  document.getElementById('admin-checkout-msg').value=store.checkoutMsg;
+}
+function closeAdmin(){document.getElementById('admin-panel').classList.remove('open');}
+
+function switchTab(e,id){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  e.target.classList.add('active');
+}
+
+function saveToko(){
+  store.name=document.getElementById('admin-store-name').value||'NAMA';
+  store.name2=document.getElementById('admin-store-name2').value||'TOKO';
+  store.desc=document.getElementById('admin-store-desc').value;
+  store.location=document.getElementById('admin-location').value;
+  saveData();renderStorefront();showToast('✅ Info toko disimpan!');
+}
+function saveKontak(){
+  store.wa=document.getElementById('admin-wa').value;
+  store.payment=document.getElementById('admin-payment').value;
+  store.checkoutMsg=document.getElementById('admin-checkout-msg').value;
+  saveData();renderStorefront();showToast('✅ Kontak disimpan!');
+}
+
+function openAddProduct(){
+  editingId=null;
+  document.getElementById('modal-title').textContent='TAMBAH PRODUK';
+  ['modal-foto','modal-emoji','modal-name','modal-desc','modal-price','modal-category'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('modal-status').value='available';
+  document.getElementById('foto-preview').innerHTML='<div class="foto-placeholder"><span>📷</span><p>Masukkan link foto di atas</p></div>';
+  document.getElementById('modal').classList.add('open');
+}
+
+function openEditProduct(id){
+  const p=store.products.find(x=>x.id===id);if(!p)return;
+  editingId=id;
+  document.getElementById('modal-title').textContent='EDIT PRODUK';
+  document.getElementById('modal-foto').value=p.foto||'';
+  document.getElementById('modal-emoji').value=p.emoji||'';
+  document.getElementById('modal-name').value=p.name;
+  document.getElementById('modal-desc').value=p.desc||'';
+  document.getElementById('modal-price').value=p.price;
+  document.getElementById('modal-category').value=p.category||'';
+  document.getElementById('modal-status').value=p.status||'available';
+  const box=document.getElementById('foto-preview');
+  box.innerHTML=p.foto?`<img src="${p.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:9px;">`:'<div class="foto-placeholder"><span>📷</span><p>Masukkan link foto di atas</p></div>';
+  document.getElementById('modal').classList.add('open');
+}
+
+function saveProduct(){
+  const name=document.getElementById('modal-name').value.trim();
+  const price=document.getElementById('modal-price').value.trim();
+  if(!name||!price){showToast('⚠️ Nama & harga wajib diisi!');return;}
+  const data={
+    id:editingId||Date.now(),
+    foto:document.getElementById('modal-foto').value.trim(),
+    emoji:document.getElementById('modal-emoji').value.trim()||'📦',
+    name,price,
+    desc:document.getElementById('modal-desc').value.trim(),
+    category:document.getElementById('modal-category').value.trim(),
+    status:document.getElementById('modal-status').value
+  };
+  if(editingId){
+    const idx=store.products.findIndex(x=>x.id===editingId);
+    if(idx>-1)store.products[idx]=data;
+    showToast('✅ Produk diperbarui!');
+  }else{
+    store.products.push(data);
+    showToast('✅ Produk ditambahkan!');
+  }
+  saveData();renderStorefront();closeModal();
+}
+
+function deleteProduct(id){
+  if(!confirm('Hapus produk ini?'))return;
+  store.products=store.products.filter(x=>x.id!==id);
+  saveData();renderStorefront();showToast('🗑 Produk dihapus!');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');editingId=null;}
+
+function openDetail(id){
+  const p=store.products.find(x=>x.id===id);if(!p)return;
+  document.getElementById('detail-img').innerHTML=imgArea(p,'big');
+  document.getElementById('detail-name').textContent=p.name;
+  document.getElementById('detail-price').textContent=p.price;
+  document.getElementById('detail-desc').textContent=p.desc||'Tidak ada deskripsi.';
+  document.getElementById('detail-meta').textContent=(p.category?'🏷 '+p.category+'   ':'')+(p.status==='sold'?'❌ Stok Habis':'✅ Tersedia');
+  const btn=document.getElementById('detail-cart-btn');
+  if(p.status==='sold'){btn.textContent='❌ Stok Habis';btn.disabled=true;btn.style.opacity='0.5';}
+  else{btn.textContent='🛒 Tambah ke Keranjang';btn.disabled=false;btn.style.opacity='1';btn.onclick=()=>{addToCart(id);closeDetail();};}
+  document.getElementById('detail-modal').classList.add('open');
+}
+function closeDetail(){document.getElementById('detail-modal').classList.remove('open');}
+
+function addToCart(id){
+  const p=store.products.find(x=>x.id===id);
+  if(!p||p.status==='sold')return;
+  const ex=cart.find(x=>x.id===id);
+  if(ex)ex.qty++;else cart.push({id,name:p.name,price:p.price,foto:p.foto,emoji:p.emoji||'📦',qty:1});
+  updateCartUI();showToast('🛒 '+p.name+' ditambahkan!');
+}
+
+function updateCartUI(){
+  document.getElementById('cart-count').textContent=cart.reduce((s,x)=>s+x.qty,0);
+  const body=document.getElementById('cart-body');
+  if(!cart.length){body.innerHTML='<div class="empty-cart"><div style="font-size:3rem;margin-bottom:12px">🛒</div><p>Keranjang masih kosong</p></div>';}
+  else{
+    body.innerHTML=cart.map(item=>`
+      <div class="cart-item">
+        <div class="cart-thumb">${item.foto?`<img src="${item.foto}" alt="${item.name}">`:item.emoji}</div>
+        <div class="cart-item-info"><div class="cart-item-name">${item.name}</div><div class="cart-item-price">${item.price}</div></div>
+        <div class="cart-item-qty">
+          <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+          <span class="qty-num">${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+        </div>
+      </div>
+    `).join('');
+  }
+  const sum=cart.reduce((s,x)=>s+(parseInt(x.price.replace(/\D/g,''))||0)*x.qty,0);
+  document.getElementById('cart-total').textContent='Rp '+sum.toLocaleString('id-ID');
+}
+
+function changeQty(id,delta){
+  const item=cart.find(x=>x.id===id);if(!item)return;
+  item.qty+=delta;if(item.qty<=0)cart=cart.filter(x=>x.id!==id);
+  updateCartUI();
+}
+function openCart(){document.getElementById('cart-panel').classList.add('open');}
+function closeCart(){document.getElementById('cart-panel').classList.remove('open');}
+
+function checkout(){
+  if(!cart.length){showToast('⚠️ Keranjang kosong!');return;}
+  const items=cart.map(x=>`• ${x.name} (x${x.qty}) - ${x.price}`).join('\n');
+  const msg=encodeURIComponent(`Halo, saya ingin memesan:\n\n${items}\n\n${store.checkoutMsg}`);
+  const wa=store.wa.replace(/\D/g,'').replace(/^0/,'');
+  window.open(`https://wa.me/62${wa}?text=${msg}`,'_blank');
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+renderStorefront();
+</script>
+</body>
+</html>
